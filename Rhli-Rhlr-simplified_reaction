@@ -1,0 +1,46 @@
+import tellurium as te
+
+r = te.loada("""
+model rhlr_rhli
+
+// start values
+rhli = 0.05;
+c4_hsl = 0;
+rhlr = 1.0;
+complx = 0;
+
+// balanced reaction rates for accurate scaling
+rhli_basal = 0.02;
+rhli_k = 0.3; // kept to preserve your parameters
+rhli_act = 1.0;
+c4_hsl_k = 0.1;
+rhli_deg = 0.2;
+c4_hsl_deg = 0.1;
+k_on = 1.0;
+k_off = 0.5;
+
+// Hill parameters optimized for switch timing
+K = 0.4;
+n = 3;
+
+// reactions
+// Combined basal and cooperative feedback activation
+-> rhli; rhli_basal + rhli_act * (complx^n / (K^n + complx^n));
+
+// Signal molecule generation
+-> c4_hsl; rhli * c4_hsl_k;
+
+// Receptor-ligand dynamics
+c4_hsl + rhlr -> complx; k_on * c4_hsl * rhlr;
+complx -> c4_hsl + rhlr; k_off * complx;
+
+// Balanced degradation pathways
+rhli -> ; rhli_deg * rhli;
+c4_hsl -> ; c4_hsl_deg * c4_hsl;
+
+end
+""")
+
+# Simulating a longer timeline to let the full switch lifecycle finish
+result = r.simulate(0, 200, 1000)
+r.plot()
